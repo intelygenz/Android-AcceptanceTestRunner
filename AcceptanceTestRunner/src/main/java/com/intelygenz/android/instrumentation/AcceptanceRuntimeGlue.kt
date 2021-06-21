@@ -55,8 +55,12 @@ internal class AcceptanceRuntimeGlue(private val localizedXStreams: LocalizedXSt
     }
 
     private fun stepDefinitionMatches(featurePath: String, step: Step): List<StepDefinitionMatch> {
-        return stepDefinitionsByPattern.values.filter { features.matchScenarioClass(featurePath, step, it) }
+        return stepDefinitions(featurePath, step)
             .mapNotNull { stepDefinition -> stepDefinition.matchedArguments(step)?.let { StepDefinitionMatch(it, stepDefinition, featurePath, step, localizedXStreams) } }
+    }
+
+    internal fun stepDefinitions(featurePath: String, step: Step): List<StepDefinition> {
+        return stepDefinitionsByPattern.values.filter { features.matchScenarioClass(featurePath, step, it) }
     }
 
     override fun reportStepDefinitions(stepDefinitionReporter: StepDefinitionReporter) {

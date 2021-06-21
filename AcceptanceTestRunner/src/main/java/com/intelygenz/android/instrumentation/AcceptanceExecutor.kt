@@ -10,31 +10,27 @@ import cucumber.runtime.android.*
 import cucumber.runtime.io.ResourceLoader
 import cucumber.runtime.java.JavaBackend
 import cucumber.runtime.java.ObjectFactoryLoader
-import cucumber.runtime.model.CucumberFeature
+import cucumber.runtime.model.*
 import cucumber.runtime.xstream.LocalizedXStreams
 import dalvik.system.DexFile
+import gherkin.formatter.Formatter
+import gherkin.formatter.Reporter
 import java.io.IOException
-import java.util.*
 
-internal class AcceptanceExecutor(arguments: Arguments, instrumentation: Instrumentation) {
-    private val instrumentation: Instrumentation
-    private val classLoader: ClassLoader
-    private val classFinder: ClassFinder
-    private val runtimeOptions: RuntimeOptions
-    private val runtime: Runtime
-    private val cucumberFeatures: List<CucumberFeature>
+
+internal class AcceptanceExecutor(arguments: Arguments, private val instrumentation: Instrumentation) {
+
+    private val classLoader: ClassLoader = instrumentation.context.classLoader
+    private val classFinder: ClassFinder = createDexClassFinder(instrumentation.context)
+    private val runtimeOptions: RuntimeOptions = createRuntimeOptions(instrumentation.context)
+    private val resourceLoader: ResourceLoader = AndroidResourceLoader(instrumentation.context)
+    private val cucumberFeatures = runtimeOptions.cucumberFeatures(resourceLoader)
+    private val runtimeGlue = AcceptanceRuntimeGlue(LocalizedXStreams(classLoader), cucumberFeatures)
+    private val runtime: Runtime = Runtime(resourceLoader, classLoader, createBackends(), runtimeOptions, runtimeGlue)
+
 
     init {
         trySetCucumberOptionsToSystemProperties(arguments)
-        val context = instrumentation.context
-        this.instrumentation = instrumentation
-        classLoader = context.classLoader
-        classFinder = createDexClassFinder(context)
-        runtimeOptions = createRuntimeOptions(context)
-        val resourceLoader: ResourceLoader = AndroidResourceLoader(context)
-        cucumberFeatures = runtimeOptions.cucumberFeatures(resourceLoader)
-        val runtimeGlue = AcceptanceRuntimeGlue(LocalizedXStreams(classLoader), cucumberFeatures)
-        runtime = Runtime(resourceLoader, classLoader, createBackends(), runtimeOptions, runtimeGlue)
     }
 
     fun execute() {
@@ -44,8 +40,9 @@ internal class AcceptanceExecutor(arguments: Arguments, instrumentation: Instrum
         val reporter = runtimeOptions.reporter(classLoader)
         val formatter = runtimeOptions.formatter(classLoader)
         val stepDefinitionReporter = runtimeOptions.stepDefinitionReporter(classLoader)
+        val ruleExecutor = GlueRuleExecutor(glue = runtimeGlue)
         runtime.glue.reportStepDefinitions(stepDefinitionReporter)
-        cucumberFeatures.forEach {
+        cucumberFeatures.map { AcceptanceFeature(ruleExecutor, it) }.forEach {
             it.run(formatter, reporter, runtime)
         }
 
@@ -100,3 +97,36 @@ internal class AcceptanceExecutor(arguments: Arguments, instrumentation: Instrum
 
 
 }
+
+private class AcceptanceFeature(val ruleExecutor: RuleExecutor, val cucumberFeature: CucumberFeature): CucumberFeature(cucumberFeature.gherkinFeature, cucumberFeature.path) {
+
+    override fun getFeatureElements(): MutableList<CucumberTagStatement> {
+        return cucumberFeature.featureElements.map {
+            when(it) {
+                is CucumberScenario -> AcceptanceScenario( it)
+                is CucumberScenarioOutline -> AcceptanceScenarioOutline(it)
+                else -> throw java.lang.IllegalStateException("not supported")
+            }
+        }.toMutableList()
+    }
+
+    private inner class AcceptanceScenario(val scenario: CucumberScenario) : CucumberScenario(scenario.getCucumberFeature(), scenario.cucumberBackground, scenario.getScenario()) {
+        override fun run(formatter: Formatter?, reporter: Reporter?, runtime: Runtime?) {
+            ruleExecutor.execute(scenario) { scenario.run(formatter, reporter, runtime) }
+        }
+    }
+
+    private inner class AcceptanceScenarioOutline(val cucumberOutline: CucumberScenarioOutline): CucumberScenarioOutline(cucumberOutline.getCucumberFeature(), cucumberOutline.getBackground(), cucumberOutline.getScenarioOutline()) {
+        override fun run(formatter: Formatter?, reporter: Reporter?, runtime: Runtime?) {
+            formatOutlineScenario(formatter)
+            cucumberOutline.cucumberExamplesList.forEach { cucumberExamples ->
+                cucumberExamples.format(formatter)
+                cucumberExamples.createExampleScenarios().map { AcceptanceScenario(it) }.forEach { it.run(formatter, reporter, runtime) }
+
+            }
+        }
+    }
+}
+
+
+

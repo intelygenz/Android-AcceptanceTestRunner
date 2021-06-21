@@ -29,10 +29,13 @@ internal fun CucumberFeature.scenariosWith(step: Step): List<String> {
     return scenarios + backgrounds
 }
 
+internal fun StepDefinition.scenarioClassName(): String = getLocation(true).split(" in ".toRegex())[1]
+
+internal fun StepDefinition.scenarioClass(): Class<*> = Class.forName(scenarioClassName())
+
 internal fun String.matchWithStepDefinition(featurePath: String, stepDefinition: StepDefinition): Boolean {
     try {
-        val className = stepDefinition.getLocation(true).split(" in ".toRegex())[1]
-        val feat = Class.forName(className).getAnnotation(Feat::class.java) as Feat
+        val feat = stepDefinition.scenarioClass().getAnnotation(Feat::class.java) as Feat
         val isCoincident = Feature(feat.feature).normalized == Feature(featurePath).normalized
         return isCoincident && Scenario(feat.scenario).normalized == Scenario(this).normalized
     } catch (ignored: ClassNotFoundException) {
@@ -42,6 +45,12 @@ internal fun String.matchWithStepDefinition(featurePath: String, stepDefinition:
 
 internal inline fun <reified T, reified R> T.getField(name: String): R? {
     return kotlin.runCatching {
-        T::class.java.getDeclaredField(name).apply { isAccessible = true }[this] as R
+        val hierarchy = mutableListOf<Class<*>>()
+        var clazz: Class<*> = T::class.java
+        while(clazz != Object::class.java) { hierarchy.add(clazz); clazz = clazz.superclass }
+        return hierarchy.flatMap { it.declaredFields.toList() }.firstOrNull { it.name == name }?.let {
+            it.isAccessible = true
+            it[this] as R
+        }
     }.getOrNull()
 }
