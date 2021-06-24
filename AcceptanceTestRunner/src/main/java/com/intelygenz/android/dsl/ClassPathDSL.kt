@@ -6,6 +6,8 @@ import org.junit.Assume
 import java.lang.IllegalStateException
 import java.lang.reflect.Method
 
+
+fun assertMissingFeatures() = GherkinEngine.getRunner().assertMissingFeatures()
 fun runFeature(feature: String) = GherkinEngine.getRunner().runFeature(feature)
 fun runScenario(scenario: Class<*>, background: Class<*>?) = GherkinEngine.getRunner().runScenario(scenario, background)
 fun runScenario(scenario: Class<*>) = GherkinEngine.getRunner().runScenario(scenario)
@@ -20,13 +22,9 @@ internal fun GherkinTestRunner.runScenario(scenario: Class<*>) {
 
 
 private fun ClassPath.toFeature(feature: String, background: String?): FeatureMatch {
-    val allScenarios = testClassesAnnotated(Feat::class.java).filter { it.getAnnotation(Feat::class.java).feature == feature }
-    val featureBackground = background?.let {
-        allScenarios.firstOrNull {
-            it.getAnnotation(Feat::class.java).scenario == background
-        } ?: throw IllegalStateException("Not background implemented for Feature: $feature")
-    }
-    return FeatureMatch(feature, (allScenarios - listOfNotNull(featureBackground)).map { it.toScenario(featureBackground) })
+    val allScenarios = featClasses.filter { it.annotation.feature == feature }
+    val featureBackground = background?.let { allScenarios.firstOrNull { it.annotation.scenario == background }  ?: throw IllegalStateException("Not background implemented for Feature: $feature") }
+    return FeatureMatch(feature, (allScenarios - listOfNotNull(featureBackground)).map { it.element.toScenario(featureBackground?.element) })
 }
 
 private fun Class<*>.toScenario(background: Class<*>? = null): ScenarioMatch {

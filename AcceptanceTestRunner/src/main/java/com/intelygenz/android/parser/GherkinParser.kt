@@ -140,7 +140,7 @@ private class FeatureMachineState(private val description: String) {
         val desc = this.scenarioDescription
         val steps = this.steps
         if(desc != null && steps != null) {
-            val newScenario = InnerScenario(scenarioAnnotations, desc, steps, index)
+            val newScenario = InnerScenario(scenarioAnnotations, desc.trim(), steps, index)
             if(isBackground) {
                 this.background = newScenario
             } else {
@@ -155,7 +155,7 @@ private class FeatureMachineState(private val description: String) {
 
     fun build(annotations: List<String>): InnerFeature {
         hitEndPreviousBlock()
-        return InnerFeature(annotations, description, scenarios, background)
+        return InnerFeature(annotations, description.trim(), scenarios, background)
     }
 }
 
@@ -173,7 +173,7 @@ private class ExamplesMachineState  {
                 val name = map.keys.fold(it.name) { acc, key -> acc.replace("<$key>", map[key] ?: "") }
                 InnerStep(it.tag, name)
             }
-            InnerScenario(scenario.annotations, description, steps, index + exampleIndex)
+            InnerScenario(scenario.annotations, description.trim(), steps, index + exampleIndex)
         }
     }
 

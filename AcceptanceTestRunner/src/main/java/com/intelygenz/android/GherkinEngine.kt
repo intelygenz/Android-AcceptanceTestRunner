@@ -34,7 +34,7 @@ internal object GherkinEngine {
 
     private fun getArguments(): Arguments {
         val bundle = InstrumentationRegistry.getArguments()
-        val acceptanceOptions = classPath.testClassesAnnotated(AcceptanceOptions::class.java).first().getAnnotation(AcceptanceOptions::class.java)
+        val acceptanceOptions = classPath.optionClasses.first().annotation
         val skipped = bundle.getStringArrayList("--skip")?.toList() ?: acceptanceOptions.excludeTags.toList()
         val included = bundle.getStringArrayList("--include")?.toList() ?: acceptanceOptions.includeTags.toList()
         val features = bundle.getStringArrayList("--features")?.toList() ?: acceptanceOptions.features.toList()
@@ -52,13 +52,23 @@ internal class GherkinTestRunner(private val arguments: Arguments) {
     fun assertFeatureExists(featureId: String): Feature = features.firstOrNull { it.matches(featureId) } ?: throw IllegalStateException("Expected Feature $featureId")
     fun background(featureId: String): Scenario? = assertFeatureExists(featureId).background
 
+    fun assertMissingFeatures() {
+        val definedFeatures = classPath.featClasses.map { it.annotation.feature }.toSet()
+        val missingFeatures = features.filter { feature -> !definedFeatures.any{ feature.matches(it)} }
+        if(missingFeatures.isNotEmpty()) throw IllegalStateException("Missing Features: ${missingFeatures.map { it.path }}")
+        assertMissingScenarios()
+    }
 
-    fun assertMissingScenarios(scenarioMatches: List<ScenarioMatch>) {
-        fun Pair<Feature, Scenario>.matchesAny(scenarioMatches: List<ScenarioMatch>) : Boolean {
-            return scenarioMatches.any { first.matches(it.featureId) && second.matches(it.scenarioId) }
+    private fun assertMissingScenarios() {
+        val definedFeatures = classPath.featClasses.groupBy { it.annotation.feature }
+        val missingScenarios = features.mapNotNull { feature ->
+            definedFeatures.keys.firstOrNull { feature.matches(it) }?.let { key ->
+                val definedScenarios = definedFeatures[key]!!.map { it.annotation.scenario }
+                val scenarios = feature.scenarios + listOfNotNull(feature.background)
+                key to scenarios.filter { scenario -> !definedScenarios.any{ scenario.matches(it) } }.map { it.description }
+            }?.takeIf { it.second.isNotEmpty() }
         }
-        val missing = features.flatMap { feature -> feature.scenarios.map { feature to it } }.filter { !it.matchesAny(scenarioMatches) }.map { it.second }
-        if(missing.isNotEmpty()) throw IllegalStateException("There are missing scenarios: $missing")
+        if(missingScenarios.isNotEmpty()) throw IllegalStateException("Missing scenarios: $missingScenarios")
     }
 
     fun runFeature(featureMatch: FeatureMatch): Boolean {

@@ -20,5 +20,9 @@ class ExampleInstrumentedTest {
         runFeature("example.feature")
     }
 
+    @Test
+    fun missingFeatures() {
+        assertMissingFeatures()
+    }
 
 }

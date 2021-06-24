@@ -10,12 +10,12 @@ internal val classPath: ClassPath by lazy {
     }
 }
 
+internal data class AnnotatedClass<T>(val annotation: T, val element: Class<*>)
+
 internal class ClassPath(private val packageCodePath: String, private val packageName: String) {
+    val testClasses: List<Class<*>> by lazy { DexClassFinder(DexFile(packageCodePath)).getDescendants(Any::class.java, packageName).toList() }
+    val featClasses: List<AnnotatedClass<Feat>> by lazy { testClasses.withAnnotation() }
+    val optionClasses: List<AnnotatedClass<AcceptanceOptions>> by lazy { testClasses.withAnnotation() }
 
-    val testClasses: List<Class<*>> by lazy {
-        DexClassFinder(DexFile(packageCodePath)).getDescendants(Any::class.java, packageName).toList()
-    }
+    private inline fun <reified T: Annotation> List<Class<*>>.withAnnotation() = mapNotNull { element -> element.getAnnotation(T::class.java)?.let { AnnotatedClass(it, element) } }
 }
-
-internal fun <T> ClassPath.testClassesAnnotated(annotation: Class<T>) : List<Class<*>> = testClasses.filter { it.isAnnotatedWith(annotation) }
-internal fun Class<*>.isAnnotatedWith(annotation: Class<*>): Boolean = annotations.any { it.annotationClass.java == annotation }
