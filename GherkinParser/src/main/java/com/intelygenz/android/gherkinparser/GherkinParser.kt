@@ -1,26 +1,26 @@
-package com.intelygenz.android.parser
+package com.intelygenz.android.gherkinparser
 
-import android.content.Context
-import android.content.res.AssetManager
 import java.io.InputStream
 import java.lang.IllegalStateException
 
-internal enum class StepTag { GIVEN, WHEN, THEN, AND }
-internal data class Feature(val path: String, val annotations: List<String>, val description: String, val scenarios: List<Scenario>, val background: Scenario?)
-internal data class Scenario(val annotations: List<String>, val description: String, val stepDescriptions: List<Step>, val index: Int, val isBackground: Boolean)
-internal data class Step(val tag: StepTag, val name: String)
+enum class StepTag { GIVEN, WHEN, THEN, AND }
+data class Feature(val path: String, val annotations: List<String>, val description: String, val scenarios: List<Scenario>, val background: Scenario?)
+data class Scenario(val annotations: List<String>, val description: String, val stepDescriptions: List<Step>, val index: Int, val isBackground: Boolean)
+data class Step(val tag: StepTag, val name: String)
 
-internal class GherkinParser(private val featurePaths: List<String>) {
-    private val context: Context get() = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().context
-    private val assets: AssetManager get() = context.assets
+interface Resource {
+    val path: String
+    val isFile: Boolean
+    val extension: String
+    fun list(): List<Resource>
+    fun open(): InputStream
+}
 
-    fun parserFeatures(): List<Feature> = assets.recursiveFind(featurePaths, ".feature")
-        .mapNotNull { path -> parseFeature(assets.open(path))?.toFeature(path) }.toList()
+class GherkinParser(private val featurePaths: List<Resource>) {
+    fun parserFeatures(): List<Feature> = featurePaths.asSequence()
+        .flatMap { res -> if(res.isFile && res.extension == ".feature") sequenceOf(res) else res.list().asSequence() }
+        .mapNotNull { res -> parseFeature(res.open())?.toFeature(res.path) }.toList()
 
-    private fun AssetManager.recursiveFind(paths: List<String>, extension: String): Sequence<String> {
-        fun listPath(path: String) = list(path)?.map { "$path/$it" }?.let { recursiveFind(it, extension) } ?: emptySequence()
-        return paths.asSequence().flatMap { path -> if(path.endsWith(extension)) sequenceOf(path) else listPath(path) }
-    }
 
     private fun parseFeature(inputStream: InputStream): InnerFeature? {
         return inputStream.bufferedReader(Charsets.UTF_8).readLines().map { it.trim() }

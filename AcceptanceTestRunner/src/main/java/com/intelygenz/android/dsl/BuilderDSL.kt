@@ -4,8 +4,7 @@ import com.intelygenz.android.GherkinEngine
 import com.intelygenz.android.GherkinTestRunner
 import com.intelygenz.android.ScenarioMatch
 import com.intelygenz.android.StepMatch
-import com.intelygenz.android.parser.StepTag
-import org.junit.Assume
+import com.intelygenz.android.gherkinparser.StepTag
 
 class ScenarioBuilder internal constructor() {
     internal val steps = mutableListOf<StepMatch>()

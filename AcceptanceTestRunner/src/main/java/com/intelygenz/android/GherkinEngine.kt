@@ -1,10 +1,12 @@
 package com.intelygenz.android
 
+import android.content.res.AssetManager
 import androidx.test.platform.app.InstrumentationRegistry
-import com.intelygenz.android.parser.*
+import com.intelygenz.android.gherkinparser.*
+import java.io.InputStream
 import java.lang.IllegalStateException
 
-data class Arguments(val featurePaths: List<String>, val featureSelection: FeatureSelection)
+data class Arguments(val featurePaths: List<Resource>, val featureSelection: FeatureSelection)
 sealed class FeatureSelection {
     object IncludeAll: FeatureSelection()
     data class Include(val included: List<String>, val skipped: List<String>) : FeatureSelection()
@@ -34,12 +36,21 @@ internal object GherkinEngine {
 
     private fun getArguments(): Arguments {
         val bundle = InstrumentationRegistry.getArguments()
+        val assets = InstrumentationRegistry.getInstrumentation().context.assets
         val acceptanceOptions = classPath.optionClasses.first().annotation
         val skipped = bundle.getStringArrayList("--skip")?.toList() ?: acceptanceOptions.excludeTags.toList()
         val included = bundle.getStringArrayList("--include")?.toList() ?: acceptanceOptions.includeTags.toList()
         val features = bundle.getStringArrayList("--features")?.toList() ?: acceptanceOptions.features.toList()
         val selection = if(skipped.isEmpty() && included.isEmpty()) FeatureSelection.IncludeAll else FeatureSelection.Include(included, skipped)
-        return Arguments(features, selection)
+        return Arguments(features.map { AssetResource(assets, it) }, selection)
+    }
+
+    private class AssetResource(private val assets: AssetManager, pathString: String): Resource {
+        override val path: String = pathString
+        override val isFile: Boolean = assets.list(path) == null
+        override val extension: String = path.lastIndexOf(".").takeIf { it != -1 }?.let { path.substring(it + 1) } ?: ""
+        override fun list(): List<Resource> = assets.list(path)?.map { AssetResource(assets, "$path/$it") } ?: emptyList()
+        override fun open(): InputStream = assets.open(path)
     }
 
 }

@@ -1,7 +1,7 @@
 package com.intelygenz.android.dsl
 
-import com.intelygenz.android.parser.Step
-import com.intelygenz.android.parser.StepTag
+import com.intelygenz.android.gherkinparser.Step
+import com.intelygenz.android.gherkinparser.StepTag
 import org.junit.Assume
 
 internal fun Step.runIf(tag: StepTag, regex: String, action: () -> Unit): Boolean = if(match(tag, regex)) action().let { true } else false

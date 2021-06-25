@@ -5,7 +5,7 @@ import com.intelygenz.android.dsl.*
 import com.intelygenz.android.dsl.asScenarioId
 import com.intelygenz.android.dsl.runIf
 import com.intelygenz.android.dsl.skipOnFalse
-import com.intelygenz.android.parser.StepTag
+import com.intelygenz.android.gherkinparser.StepTag
 import org.junit.Assume
 import org.junit.rules.TestRule
 import org.junit.runner.Description
