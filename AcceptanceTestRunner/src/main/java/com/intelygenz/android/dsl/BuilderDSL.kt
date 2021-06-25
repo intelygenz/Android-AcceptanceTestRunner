@@ -20,5 +20,5 @@ fun runScenario(feature: String, scenario: String, builder: ScenarioBuilder.() -
 
 internal fun GherkinTestRunner.runScenario(feature: String, scenario: String, builder: ScenarioBuilder.() -> Unit, background: (ScenarioBuilder.() -> Unit)?)  {
     val scenarioMatch = ScenarioMatch(feature, scenario, ScenarioBuilder().apply(builder).steps, background?.let { ScenarioBuilder().apply(it).steps })
-    Assume.assumeTrue(runScenario(scenarioMatch))
+    runScenario(scenarioMatch).skipOnFalse()
 }

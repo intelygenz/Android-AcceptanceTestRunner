@@ -47,29 +47,11 @@ internal object GherkinEngine {
 internal class GherkinTestRunner(private val arguments: Arguments) {
 
     private val parser = GherkinParser(arguments.featurePaths)
-    private val features: List<Feature> by lazy { parser.parserFeatures() }
+    val features: List<Feature> by lazy { parser.parserFeatures() }
 
     fun assertFeatureExists(featureId: String): Feature = features.firstOrNull { it.matches(featureId) } ?: throw IllegalStateException("Expected Feature $featureId")
     fun background(featureId: String): Scenario? = assertFeatureExists(featureId).background
 
-    fun assertMissingFeatures() {
-        val definedFeatures = classPath.featClasses.map { it.annotation.feature }.toSet()
-        val missingFeatures = features.filter { feature -> !definedFeatures.any{ feature.matches(it)} }
-        if(missingFeatures.isNotEmpty()) throw IllegalStateException("Missing Features: ${missingFeatures.map { it.path }}")
-        assertMissingScenarios()
-    }
-
-    private fun assertMissingScenarios() {
-        val definedFeatures = classPath.featClasses.groupBy { it.annotation.feature }
-        val missingScenarios = features.mapNotNull { feature ->
-            definedFeatures.keys.firstOrNull { feature.matches(it) }?.let { key ->
-                val definedScenarios = definedFeatures[key]!!.map { it.annotation.scenario }
-                val scenarios = feature.scenarios + listOfNotNull(feature.background)
-                key to scenarios.filter { scenario -> !definedScenarios.any{ scenario.matches(it) } }.map { it.description }
-            }?.takeIf { it.second.isNotEmpty() }
-        }
-        if(missingScenarios.isNotEmpty()) throw IllegalStateException("Missing scenarios: $missingScenarios")
-    }
 
     fun runFeature(featureMatch: FeatureMatch): Boolean {
         val feature = assertFeatureExists(featureMatch.featureId)
@@ -107,8 +89,8 @@ internal class GherkinTestRunner(private val arguments: Arguments) {
 
 }
 
-private fun Feature.matches(id: String): Boolean = description == id || description.classCamelCase() == id || path == id || path.endsWith(id)
-private fun Scenario.matches(id: String): Boolean = description == id || description.methodCamelCase() == id || "test${description.methodCamelCase()}" == id
+internal fun Feature.matches(id: String): Boolean = description == id || description.classCamelCase() == id || path == id || path.endsWith(id)
+internal fun Scenario.matches(id: String): Boolean = description == id || description.methodCamelCase() == id || "test${description.methodCamelCase()}" == id
 
 private fun String.methodCamelCase(): String = split(" ").joinToString("") { it.capitalize() }
 private fun String.classCamelCase(): String = methodCamelCase().capitalize()
