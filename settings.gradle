@@ -2,3 +2,4 @@ rootProject.name = "AcceptanceTestRunner"
 include ':app'
 include ':AcceptanceTestRunner'
 include ':GherkinParser'
+include ':AcceptanceTestGen'
