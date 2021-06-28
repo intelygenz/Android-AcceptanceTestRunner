@@ -5,7 +5,7 @@ import java.lang.IllegalStateException
 
 enum class StepTag { GIVEN, WHEN, THEN, AND }
 data class Feature(val path: String, val annotations: List<String>, val description: String, val scenarios: List<Scenario>, val background: Scenario?)
-data class Scenario(val annotations: List<String>, val description: String, val stepDescriptions: List<Step>, val index: Int, val isBackground: Boolean)
+data class Scenario(val featurePath: String, val annotations: List<String>, val description: String, val stepDescriptions: List<Step>, val index: Int, val isBackground: Boolean)
 data class Step(val tag: StepTag, val name: String)
 
 interface Resource {
@@ -19,6 +19,7 @@ interface Resource {
 class GherkinParser(private val featurePaths: List<Resource>) {
     fun parserFeatures(): List<Feature> = featurePaths.asSequence()
         .flatMap { res -> if(res.isFile && res.extension == ".feature") sequenceOf(res) else res.list().asSequence() }
+        .filter { it.isFile }
         .mapNotNull { res -> parseFeature(res.open())?.toFeature(res.path) }.toList()
 
 
@@ -30,9 +31,9 @@ class GherkinParser(private val featurePaths: List<Resource>) {
     }
 }
 
-private fun InnerFeature.toFeature(path: String) = Feature(path, annotations, description, scenarios.map { it.toScenario() }, background?.toScenario(true))
-private fun InnerScenario.toScenario(isBackground: Boolean = false) = Scenario(annotations, description, stepDescriptions.map{ it.toStep() }, index, isBackground)
-private fun InnerStep.toStep() = Step(StepTag.values().first { it.name.lowercase() == tag.lowercase() }, name)
+private fun InnerFeature.toFeature(path: String) = Feature(path, annotations, description, scenarios.map { it.toScenario(path) }, background?.toScenario(path,true))
+private fun InnerScenario.toScenario(featurePath: String, isBackground: Boolean = false) = Scenario(featurePath, annotations, description, stepDescriptions.map{ it.toStep() }, index, isBackground)
+private fun InnerStep.toStep() = Step(StepTag.values().first { it.name.lowercase() == tag.lowercase() }, name.trim())
 
 
 private fun FileMachineState.build(lines: List<String>) : InnerFeature {

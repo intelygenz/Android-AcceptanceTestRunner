@@ -26,7 +26,6 @@ fun List<Feature>.generateTestClass(packageName: String, folder: File) {
 
     fun Scenario.toTestFun() = FunSpec.builder(description.camelCase().decapitalize())
         .addAnnotation(TestClassName)
-      //  .returns(Unit::class)
         .addCode("return runScenario(%S, %S)", featurePath.fileName(), description)
         .build()
 
