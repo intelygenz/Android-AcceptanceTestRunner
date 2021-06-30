@@ -2,7 +2,8 @@
     <id>com.intelygenz.android.acceptanceplugin</id>
     <name>AcceptancePlugin</name>
     <vendor>Intelygenz</vendor>
-
+    <depends>org.jetbrains.android</depends>
+    <depends>com.intellij.modules.androidstudio</depends>
     <!-- Product and plugin compatibility requirements -->
     <!-- https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html
     <depends>com.intellij.modules.platform</depends>

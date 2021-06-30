@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
+import java.util.*
 import javax.swing.JDialog
 
 internal inline fun VirtualFile.isChildOf(contains: (VirtualFile) -> Boolean): Boolean = firstInHierarchy(contains) != null
@@ -22,7 +23,7 @@ internal inline fun VirtualFile.filterChildren(filter: (VirtualFile) -> Boolean)
     val children = mutableListOf<VirtualFile>()
     val elements = mutableListOf(this)
     while(elements.isNotEmpty()) {
-        elements.removeFirst().let { element ->
+        elements.first().also { elements.remove(it) }.let { element ->
             if(element.isDirectory) {
                 children.addAll(element.children?.toList() ?: emptyList())
             } else {
@@ -42,3 +43,4 @@ internal fun JDialog.present(project: Project?) {
     isVisible = true
 }
 
+internal fun String.lowercase() = toLowerCase(Locale.getDefault())

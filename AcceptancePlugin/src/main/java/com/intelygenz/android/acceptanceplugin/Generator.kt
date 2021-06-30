@@ -8,18 +8,16 @@ import com.intelygenz.android.gherkinparser.GherkinParser
 import com.intelygenz.android.gherkinparser.Resource
 import java.io.InputStream
 
-import kotlin.io.path.Path
-
 object Generator {
 
     fun generateFeat(feature: VirtualFile, toPath: VirtualFile, packageName: String) {
         val features = parse(listOf(feature))
-        features.first().generateCodeTo(packageName, Path(toPath.path), CollisionBehavior.RENAME_FILE)
+        features.first().generateCodeTo(packageName, toPath.toNioPath(), CollisionBehavior.RENAME_FILE)
         toPath.refresh(true, true)
     }
 
     fun generateTests(features: List<VirtualFile>, toPath: VirtualFile, packageName: String) {
-        parse(features).generateTestClass(packageName, Path(toPath.path), CollisionBehavior.OVERRIDE)
+        parse(features).generateTestClass(packageName, toPath.toNioPath(), CollisionBehavior.OVERRIDE)
         toPath.refresh(true, true)
     }
 
