@@ -1,0 +1,36 @@
+<idea-plugin>
+    <id>com.intelygenz.android.acceptanceplugin</id>
+    <name>AcceptancePlugin</name>
+    <vendor>Intelygenz</vendor>
+
+    <!-- Product and plugin compatibility requirements -->
+    <!-- https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="org.jetbrains.plugins.template.services.MyApplicationService"/>
+        <projectService serviceImplementation="org.jetbrains.plugins.template.services.MyProjectService"/>
+    </extensions>
+
+    <applicationListeners>
+        <listener class="org.jetbrains.plugins.template.listeners.MyProjectManagerListener"
+                  topic="com.intellij.openapi.project.ProjectManagerListener"/>
+    </applicationListeners>
+-->
+    <actions>
+        <group id="TestGenerator"
+            text="_TestGenerator"
+            description="Test Generation Actions">
+            <add-to-group group-id="MainMenu" anchor="last"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
+            <action id="GenerateFeat"
+                class="com.intelygenz.android.acceptanceplugin.GenerateFeat"
+                text="Generate Feat (Test)"
+                description="Generate Test Feat"/>
+            <action id="Generate Tests"
+                class="com.intelygenz.android.acceptanceplugin.GenerateTests"
+                text="Generate Test Class for feats"
+                description="Generate Test Class For feats"/>
+        </group>
+    </actions>
+</idea-plugin>

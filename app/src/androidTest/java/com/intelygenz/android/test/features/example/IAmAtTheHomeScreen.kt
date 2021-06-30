@@ -1,7 +1,7 @@
 package com.intelygenz.android.test.features.example
 
-import com.intelygenz.android.Feat
 import com.intelygenz.android.*
+
 
 @Feat(feature = "example.feature", scenario = "I am at the home screen")
 class IAmAtTheHomeScreen {

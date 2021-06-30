@@ -1,6 +1,7 @@
 plugins {
     id 'java-library'
     id 'kotlin'
+    id 'org.jetbrains.intellij' version "1.0"
 }
 
 java {
@@ -8,15 +9,26 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
+intellij {
+    pluginName = "Acceptance Plugin"
+    version = "2020.1"
+}
+
+patchPluginXml {
+    sinceBuild = "201"
+    untilBuild = "211.*"
+}
+
+
 jar {
     from {
         configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }
 
+
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    compile 'com.squareup:kotlinpoet:1.9.0'
     compile project(":GherkinParser")
-    testImplementation 'junit:junit:4.+'
+    compile project(":AcceptanceTestGen")
 }
