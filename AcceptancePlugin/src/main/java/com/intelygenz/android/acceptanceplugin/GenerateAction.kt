@@ -11,7 +11,7 @@ class GenerateFeat : AnAction() {
 
     override fun update(e: AnActionEvent) {
         val isVisible = e.virtualFile()?.name?.lowercase()?.endsWith(".feature") ?: false
-        e.presentation.isEnabled = isVisible
+        e.presentation.isEnabledAndVisible = isVisible
     }
 
     override fun actionPerformed(e: AnActionEvent) {
@@ -28,14 +28,16 @@ class GenerateTests : AnAction() {
         val isVisible = e.virtualFile()
             ?.takeIf { it.isDirectory }
             ?.takeIf { it.containsChild { it.name.lowercase().endsWith(".feature") } }
+            ?.takeIf { it.children.any { it.name == ".template" }}
             ?.let { true } ?: false
-        e.presentation.isEnabled = isVisible
+        e.presentation.isEnabledAndVisible = isVisible
     }
 
     override fun actionPerformed(e: AnActionEvent) {
         val features = e.virtualFile()?.filterChildren { it.name.lowercase().endsWith(".feature") } ?: return
+        val templateFile = e.virtualFile()?.children?.first { it.name == ".template" } ?: return
         e.project?.destinationDialog(e.virtualFile()!!) { srcPath, packageName ->
-            Generator.generateTests(features, srcPath, packageName)
+            Generator.generateTests(features, templateFile, srcPath, packageName)
         }
     }
 }
@@ -46,7 +48,7 @@ private fun Project.destinationDialog(virtualFile: VirtualFile, onSelected: (Vir
         .choose(virtualFile) {
             it.first().run {
                 val srcParent = firstInHierarchy { it.name == "java" || it.name == "kotlin" }?.takeIf { it != this }
-                val packageName = srcParent?.let { path.removePrefix(it.path).replace("/", ".") }
+                val packageName = srcParent?.let { path.removePrefix(it.path).replace("/", ".").removePrefix(".") }
                 if (packageName != null) onSelected(srcParent, packageName) else packageDialog(this, onSelected)
             }
         }

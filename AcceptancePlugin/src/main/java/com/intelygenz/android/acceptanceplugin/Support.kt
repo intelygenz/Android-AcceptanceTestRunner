@@ -25,7 +25,7 @@ internal inline fun VirtualFile.filterChildren(filter: (VirtualFile) -> Boolean)
     while(elements.isNotEmpty()) {
         elements.first().also { elements.remove(it) }.let { element ->
             if(element.isDirectory) {
-                children.addAll(element.children?.toList() ?: emptyList())
+                elements.addAll(element.children?.toList() ?: emptyList())
             } else {
                 if(filter(element)) children.add(element) else Unit
             }

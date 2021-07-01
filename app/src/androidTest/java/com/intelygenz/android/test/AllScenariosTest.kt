@@ -7,10 +7,8 @@ import org.junit.runner.RunWith
 
 
 @RunWith(ScenarioRunner::class)
-class ExampleInstrumentedTest {
-    @Test
-    fun example_someDeterminableBusinessSituation()  {
-        runScenario("example", "Some determinable business situation")
-    }
+class AllScenariosTest {
+
+    @Test fun example_someDeterminableBusinessSituation() = runScenario("example.feature", "Some determinable business situation")
 
 }

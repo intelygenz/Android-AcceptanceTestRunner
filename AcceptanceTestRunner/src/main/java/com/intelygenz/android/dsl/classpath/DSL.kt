@@ -20,7 +20,7 @@ private fun RunNotifier.runOn(description: Description, action: () -> Unit) {
     fireTestFinished(description)
 }
 
-class AllScenariosExecutedChecker(testClass: Class<*>): Runner() {
+class ScenarioRunner(testClass: Class<*>): Runner() {
     private val testName = "allScenariosExecuted"
     private val assertMethodDescription = Description.createTestDescription(testClass.name, testName, testName)
     private val innerRunner = AndroidJUnit4ClassRunner(testClass)

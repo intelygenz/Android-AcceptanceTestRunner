@@ -2,8 +2,8 @@ package com.intelygenz.android.acceptanceplugin
 
 import com.intellij.openapi.vfs.VirtualFile
 import com.intelygenz.android.gen.CollisionBehavior
-import com.intelygenz.android.gen.generateCodeTo
-import com.intelygenz.android.gen.generateTestClass
+import com.intelygenz.android.gen.generation.generateCodeTo
+import com.intelygenz.android.gen.generation.generateTestClass
 import com.intelygenz.android.gherkinparser.GherkinParser
 import com.intelygenz.android.gherkinparser.Resource
 import java.io.InputStream
@@ -16,9 +16,10 @@ object Generator {
         toPath.refresh(true, true)
     }
 
-    fun generateTests(features: List<VirtualFile>, toPath: VirtualFile, packageName: String) {
-        parse(features).generateTestClass(packageName, toPath.toNioPath(), CollisionBehavior.OVERRIDE)
-        toPath.refresh(true, true)
+    fun generateTests(features: List<VirtualFile>, templateFile: VirtualFile, toPath: VirtualFile, packageName: String) {
+        val template = templateFile.toNioPath().toFile().readText(Charsets.UTF_8)
+        parse(features).generateTestClass(template, packageName, toPath.toNioPath(), CollisionBehavior.OVERRIDE)
+        toPath.refresh(false, true)
     }
 
     private fun parse(features: List<VirtualFile>) = GherkinParser(features.map(::VirtualFileResource)).parserFeatures()
