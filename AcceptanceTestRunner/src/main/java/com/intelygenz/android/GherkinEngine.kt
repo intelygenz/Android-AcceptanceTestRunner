@@ -47,8 +47,8 @@ internal object GherkinEngine {
 
     private class AssetResource(private val assets: AssetManager, pathString: String): Resource {
         override val path: String = pathString
-        override val isFile: Boolean = assets.list(path) == null
-        override val extension: String = path.lastIndexOf(".").takeIf { it != -1 }?.let { path.substring(it + 1) } ?: ""
+        override val isFile: Boolean = assets.list(path)?.isEmpty() ?: true
+        override val extension: String = path.lastIndexOf(".").takeIf { it != -1 }?.let { ".${path.substring(it + 1)}" } ?: ""
         override fun list(): List<Resource> = assets.list(path)?.map { AssetResource(assets, "$path/$it") } ?: emptyList()
         override fun open(): InputStream = assets.open(path)
     }
